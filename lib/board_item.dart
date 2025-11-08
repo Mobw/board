@@ -1,7 +1,7 @@
-import 'package:flutter_boardview/board_list.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_boardview/board_list.dart';
 
 typedef OnDropItem = void Function(int? listIndex, int? itemIndex,
     int? oldListIndex, int? oldItemIndex, BoardItemState state);
@@ -21,6 +21,7 @@ class BoardItem extends StatefulWidget {
   final OnStartDragItem? onStartDragItem;
   final OnDragItem? onDragItem;
   final bool draggable;
+  final bool useNormalDrag;
 
   const BoardItem(
       {Key? key,
@@ -31,6 +32,7 @@ class BoardItem extends StatefulWidget {
       this.onTapItem,
       this.onStartDragItem,
       this.draggable = true,
+      this.useNormalDrag = true,
       this.onDragItem})
       : super(key: key);
 
@@ -100,6 +102,34 @@ class BoardItemState extends State<BoardItem>
     }
   }
 
+  void _handleDrag() {
+    if (widget.draggable &&
+        !widget.boardList!.widget.boardView!.widget.isSelecting) {
+      RenderBox object = context.findRenderObject() as RenderBox;
+      Offset pos = object.localToGlobal(Offset.zero);
+      RenderBox box = widget.boardList!.context.findRenderObject() as RenderBox;
+      Offset listPos = box.localToGlobal(Offset.zero);
+      widget.boardList!.widget.boardView!.leftListX = listPos.dx;
+      widget.boardList!.widget.boardView!.topListY = listPos.dy;
+      widget.boardList!.widget.boardView!.topItemY = pos.dy;
+      widget.boardList!.widget.boardView!.bottomItemY =
+          pos.dy + object.size.height;
+      widget.boardList!.widget.boardView!.bottomListY =
+          listPos.dy + box.size.height;
+      widget.boardList!.widget.boardView!.rightListX =
+          listPos.dx + box.size.width;
+
+      widget.boardList!.widget.boardView!.initialX = pos.dx;
+      widget.boardList!.widget.boardView!.initialY = pos.dy;
+    }
+  }
+
+  void _onTap() {
+    if (widget.onTapItem != null) {
+      widget.onTapItem!(widget.boardList!.widget.index, widget.index, this);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -109,41 +139,19 @@ class BoardItemState extends State<BoardItem>
       widget.boardList!.itemStates.removeAt(widget.index!);
     }
     widget.boardList!.itemStates.insert(widget.index!, this);
-    return GestureDetector(
-      onTapDown: (otd) {
-        if (widget.draggable) {
-          RenderBox object = context.findRenderObject() as RenderBox;
-          Offset pos = object.localToGlobal(Offset.zero);
-          RenderBox box =
-              widget.boardList!.context.findRenderObject() as RenderBox;
-          Offset listPos = box.localToGlobal(Offset.zero);
-          widget.boardList!.widget.boardView!.leftListX = listPos.dx;
-          widget.boardList!.widget.boardView!.topListY = listPos.dy;
-          widget.boardList!.widget.boardView!.topItemY = pos.dy;
-          widget.boardList!.widget.boardView!.bottomItemY =
-              pos.dy + object.size.height;
-          widget.boardList!.widget.boardView!.bottomListY =
-              listPos.dy + box.size.height;
-          widget.boardList!.widget.boardView!.rightListX =
-              listPos.dx + box.size.width;
-
-          widget.boardList!.widget.boardView!.initialX = pos.dx;
-          widget.boardList!.widget.boardView!.initialY = pos.dy;
-        }
-      },
-      onTapCancel: () {},
-      onTap: () {
-        if (widget.onTapItem != null) {
-          widget.onTapItem!(widget.boardList!.widget.index, widget.index, this);
-        }
-      },
-      onLongPress: () {
-        if (!widget.boardList!.widget.boardView!.widget.isSelecting &&
-            widget.draggable) {
-          _startDrag(widget, context);
-        }
-      },
-      child: widget.item,
-    );
+    return widget.useNormalDrag
+        ? GestureDetector(
+            onPanStart: (details) => _startDrag(widget, context),
+            onPanDown: (details) => _handleDrag(),
+            onTap: _onTap,
+            child: widget.item,
+          )
+        : GestureDetector(
+            onTapDown: (otd) => _handleDrag(),
+            onTapCancel: () {},
+            onTap: _onTap,
+            onLongPress: () => _startDrag(widget, context),
+            child: widget.item,
+          );
   }
 }

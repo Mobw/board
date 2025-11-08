@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_boardview/board_item.dart';
 import 'package:flutter_boardview/boardview.dart';
-import 'package:flutter/material.dart';
 
 typedef OnDropList = void Function(int? listIndex, int? oldListIndex);
 typedef OnTapList = void Function(int? listIndex);
@@ -100,6 +100,7 @@ class BoardListState extends State<BoardList> with AutomaticKeepAliveClientMixin
         boardList: this,
         item: widget.items![index].item,
         draggable: widget.items![index].draggable,
+        useNormalDrag: widget.items![index].useNormalDrag,
         index: index,
         onDropItem: widget.items![index].onDropItem,
         onTapItem: widget.items![index].onTapItem,

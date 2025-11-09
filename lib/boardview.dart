@@ -2,10 +2,11 @@ library flutter_boardview;
 
 import 'dart:core';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_boardview/board_list.dart';
 import 'package:flutter_boardview/boardview_controller.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 class BoardView extends StatefulWidget {
   final List<BoardList>? lists;
@@ -379,7 +380,9 @@ class BoardViewState extends State<BoardView>
       });
     }
     Widget listWidget = ListView.builder(
-      physics: const ClampingScrollPhysics(),
+      dragStartBehavior: DragStartBehavior.start,
+      physics:
+          const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
       itemCount: widget.lists!.length,
       scrollDirection: Axis.horizontal,
       controller: boardViewController,
@@ -437,7 +440,14 @@ class BoardViewState extends State<BoardView>
       },
     );
 
-    List<Widget> stackWidgets = <Widget>[listWidget];
+    Widget scrollableList = Scrollbar(
+      controller: boardViewController,
+      thumbVisibility: true,
+      interactive: true,
+      child: listWidget,
+    );
+
+    List<Widget> stackWidgets = <Widget>[scrollableList];
     bool isInBottomWidget = false;
     if (dy != null) {
       if (MediaQuery.of(context).size.height - dy! < 80) {
